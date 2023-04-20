@@ -1,0 +1,47 @@
+*{
+    margin: 0;
+    padding: 0;
+}
+html, body{
+    font-family: sans-serif;
+    background-color: #02060e;
+}
+#navigation-bar{
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+.nav-link:hover{
+    color:#1cb439 !important;
+    font-size: large !important;
+}
+.nav-link{
+    color:#a8a8a8 !important;
+    font-size: large !important;
+}
+.vr{
+    color:#444444 !important;
+}
+#btn-register{
+    background-color: #168029;
+}
+.jumbotron {
+    background-size: cover;
+    background-position: center;
+    transition: all 0.3s;
+    padding: 0;
+    height: 55vh;
+}
+.jumbotron:hover {
+    transform: scale(1.1);
+}
+.bg-dark {
+    background-color: rgba(0,0,0,0.5);
+}
+.jumbotron .container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
