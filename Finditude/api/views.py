@@ -1,7 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.exceptions import AuthenticationFailed
 from .serializers import UserSerializer
 from .models import User
 from .models import MissingPerson
@@ -11,19 +10,24 @@ import datetime
 # Create your views here.
 class RegisterView(APIView):
     def post(self, request):
-        serializer = UserSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data)
+        user = User.objects.filter(email=request.data['email']).first()
+        if user is None:
+            serializer = UserSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_403_FORBIDDEN)
 
 class LoginView(APIView):
     def post(self, request):
         email = request.data['email']
         password = request.data['password']
-
+        
         user = User.objects.filter(email=email).first()
         if user is None or not user.check_password(password):
-            raise AuthenticationFailed('Incorrect username or password!')
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+            #raise AuthenticationFailed('Incorrect username or password!')
         
         #JWT Payload
         payload = {
@@ -43,6 +47,7 @@ class LoginView(APIView):
         return response
     
 class LogoutView(APIView):
+    #TODO: Make logout work properly
     def post(self, request):
         response = Response()
         response.delete_cookie('jwt')
@@ -53,7 +58,18 @@ class LogoutView(APIView):
     
 class MissingPersonRegView(APIView):
     def post(self, request):
-        #TODO: Check if authenticated or not
+        token = request.data['jwt']
+        if not token:
+            return Response(status=status.HTTP_401_UNAUTHORIZED) 
+        try:
+            payload = jwt.decode(token, 'secret_key', algorithms=['HS256'], options={'verify_exp': False})
+            user = User.objects.filter(id=payload['id']).first()
+            if user is None:
+                raise Exception("Unauthenticated")
+        except:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        #Otherwise we are authenticated, continue normally
         full_name = request.data['full_name']
         age = request.data['age']
         gender = request.data['gender']
@@ -65,6 +81,20 @@ class MissingPersonRegView(APIView):
 
 class MissingPersonGetView(APIView):
     def post(self, request):
+        token = request.data['jwt']
+        if not token:
+            return Response(status=status.HTTP_401_UNAUTHORIZED) 
+        try:
+            payload = jwt.decode(token, 'secret_key', algorithms=['HS256'], options={'verify_exp': False})
+            user = User.objects.filter(id=payload['id']).first()
+            print(user)
+            if user is None:
+                raise Exception("Unauthenticated")
+        except Exception as e:
+            print(e)
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        #Otherwise we are authenticated, continue normally
         id = request.data['id']
         missingPerson = MissingPerson.objects.filter(id=id).first()
         response = Response()
