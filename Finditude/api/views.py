@@ -6,6 +6,11 @@ from .models import User
 from .models import MissingPerson
 import jwt
 import datetime
+import json
+from django.http import JsonResponse
+
+
+
 
 # Create your views here.
 class RegisterView(APIView):
@@ -106,4 +111,30 @@ class MissingPersonGetView(APIView):
         }
         return response
 
+class MissingPersonRandom(APIView):
+    def post(self, request):
+        token = request.data['jwt']
+        if not token:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            payload = jwt.decode(token, 'secret_key', algorithms=['HS256'], options={'verify_exp': False})
+            user = User.objects.filter(id=payload['id']).first()
+            print(user)
+            if user is None:
+                raise Exception("Unauthenticated")
+        except Exception as e:
+            print(e)
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
         
+        #Otherwise we are authenticated, continue normally
+
+        # Try to get the results from the cache
+        randomMissingPersons = MissingPerson.objects.order_by('?')[:100] #Warning: Could be slow when database is larger
+        recordList = list(randomMissingPersons.values())
+        #print(json.dumps(recordList, ensure_ascii=False)) 
+        return JsonResponse(json.dumps(recordList, ensure_ascii=False), safe=False)
+
+
+
+        
+

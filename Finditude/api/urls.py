@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import RegisterView, LoginView, LogoutView, MissingPersonRegView, MissingPersonGetView
+from .views import RegisterView, LoginView, LogoutView, MissingPersonRegView, MissingPersonGetView, MissingPersonRandom
 
 
 urlpatterns = [
@@ -8,4 +8,5 @@ urlpatterns = [
     path('logout', LogoutView.as_view()),
     path('missingreg', MissingPersonRegView.as_view()),
     path('missingget', MissingPersonGetView.as_view()),
+    path('missingrandom', MissingPersonRandom.as_view()),
 ]
