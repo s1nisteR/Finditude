@@ -132,7 +132,20 @@ class MissingPersonRandom(APIView):
 
         # Try to get the results from the cache
         randomMissingPersons = MissingPerson.objects.order_by('?')[:100]
-        recordList = list(randomMissingPersons.values('id', 'full_name'))
+        #recordList = list(randomMissingPersons.values('id', 'full_name'))
+        recordList = []
+        for missingPerson in randomMissingPersons:
+            missing_image = MissingImage.objects.filter(missingid=missingPerson.id).first()
+            image_url = None
+
+            if missing_image is not None:
+                image_url = request.build_absolute_uri(missing_image.photo.url)
+            #image_url = request.build_absolute_uri(missing_image.photo.url)
+            recordList.append({
+                'id': missingPerson.id,
+                'full_name': missingPerson.full_name,
+                'photo': image_url
+            })
         #print(json.dumps(recordList, ensure_ascii=False)) 
         return JsonResponse(recordList, safe=False)
     
