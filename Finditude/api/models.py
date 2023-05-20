@@ -21,3 +21,9 @@ class MissingPerson(models.Model):
     gender = models.CharField(max_length=255)
     identifying_info = models.CharField(max_length=100000)
     #TODO: Deal with images later on
+
+
+class MissingImage(models.Model):
+    uuid = models.BigAutoField(primary_key=True)
+    missingid = models.BigIntegerField()
+    photo = models.ImageField(upload_to='missingImages/')

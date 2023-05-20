@@ -4,10 +4,13 @@ from rest_framework import status
 from .serializers import UserSerializer
 from .models import User
 from .models import MissingPerson
+from .models import MissingImage
 import jwt
 import datetime
 import json
 from django.http import JsonResponse
+from rest_framework.parsers import MultiPartParser, FormParser
+from .models import MissingImage
 
 
 
@@ -82,7 +85,7 @@ class MissingPersonRegView(APIView):
         newMissingPerson = MissingPerson(full_name=full_name, age=age, gender=gender, identifying_info=identifying_info)
         #Actually write to the database
         newMissingPerson.save()
-        return Response(status=status.HTTP_200_OK)
+        return Response({"id": newMissingPerson.id}, status=status.HTTP_200_OK)
 
 class MissingPersonGetView(APIView):
     def post(self, request):
@@ -125,14 +128,61 @@ class MissingPersonRandom(APIView):
         except Exception as e:
             print(e)
             return Response(status=status.HTTP_401_UNAUTHORIZED)
-        
         #Otherwise we are authenticated, continue normally
 
         # Try to get the results from the cache
-        randomMissingPersons = MissingPerson.objects.order_by('?')[:100] #Warning: Could be slow when database is larger
-        recordList = list(randomMissingPersons.values())
+        randomMissingPersons = MissingPerson.objects.order_by('?')[:100]
+        recordList = list(randomMissingPersons.values('id', 'full_name'))
         #print(json.dumps(recordList, ensure_ascii=False)) 
-        return JsonResponse(json.dumps(recordList, ensure_ascii=False), safe=False)
+        return JsonResponse(recordList, safe=False)
+    
+class MissingPersonImageUploadView(APIView):
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request, format=None):
+        token = request.data['jwt']
+        if not token:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            payload = jwt.decode(token, 'secret_key', algorithms=['HS256'], options={'verify_exp': False})
+            user = User.objects.filter(id=payload['id']).first()
+            print(user)
+            if user is None:
+                raise Exception("Unauthenticated")
+        except Exception as e:
+            print(e)
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        #Otherwise we are authenticated, continue normally
+        id = request.data.get('id')
+        photo = request.data.get('photo')
+
+        if id and photo:
+            image = MissingImage.objects.create(missingid=id, photo=photo)
+            return Response({'photo': image.photo.url}, status=200)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+class MissingPersonImageGetView(APIView):
+    def post(self, request):
+        token = request.data['jwt']
+        if not token:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            payload = jwt.decode(token, 'secret_key', algorithms=['HS256'], options={'verify_exp': False})
+            user = User.objects.filter(id=payload['id']).first()
+            print(user)
+            if user is None:
+                raise Exception("Unauthenticated")
+        except Exception as e:
+            print(e)
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        #Otherwise we are authenticated, continue normally
+        id = request.data['id']
+        allPictures = MissingImage.objects.filter(missingid=id)
+        image_urls = [request.build_absolute_uri(image.photo.url) for image in allPictures]
+        return Response({'images': image_urls})
+
+
+
 
 
 
