@@ -251,7 +251,6 @@ class MyFindingsGetView(APIView):
             print(e)
             return Response(status=status.HTTP_401_UNAUTHORIZED)
         #Otherwise we are authenticated, continue normally
-        user = User.objects.filter(id=payload['id']).first()
-        return Response({'findings': user.myFindings})
+        return Response({'findings': User.objects.filter(id=payload['id']).first().myFindings})
         
 
