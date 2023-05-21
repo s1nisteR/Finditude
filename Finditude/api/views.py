@@ -85,6 +85,10 @@ class MissingPersonRegView(APIView):
         newMissingPerson = MissingPerson(full_name=full_name, age=age, gender=gender, identifying_info=identifying_info)
         #Actually write to the database
         newMissingPerson.save()
+        #Save the ID of this missing person to the myReports of the reporter
+        user = User.objects.filter(id=payload['id']).first()
+        user.myReports.append(newMissingPerson.id)
+        user.save()
         return Response({"id": newMissingPerson.id}, status=status.HTTP_200_OK)
 
 class MissingPersonGetView(APIView):
@@ -194,10 +198,60 @@ class MissingPersonImageGetView(APIView):
         image_urls = [request.build_absolute_uri(image.photo.url) for image in allPictures]
         return Response({'images': image_urls})
 
+class MyReportsGetView(APIView):
+     def post(self, request):
+        token = request.data['jwt']
+        if not token:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            payload = jwt.decode(token, 'secret_key', algorithms=['HS256'], options={'verify_exp': False})
+            user = User.objects.filter(id=payload['id']).first()
+            print(user)
+            if user is None:
+                raise Exception("Unauthenticated")
+        except Exception as e:
+            print(e)
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        #Otherwise we are authenticated, continue normally
+        return Response({'reports': User.objects.filter(id=payload['id']).first().myReports})
 
+class StartFindingView(APIView):
+     def post(self, request):
+        token = request.data['jwt']
+        if not token:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            payload = jwt.decode(token, 'secret_key', algorithms=['HS256'], options={'verify_exp': False})
+            user = User.objects.filter(id=payload['id']).first()
+            print(user)
+            if user is None:
+                raise Exception("Unauthenticated")
+        except Exception as e:
+            print(e)
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        #Otherwise we are authenticated, continue normally
+        missingid = request.data['id']
+        user = User.objects.filter(id=payload['id']).first()
+        user.myFindings.append(missingid)
+        user.save()
+        return Response(status=status.HTTP_200_OK)
 
-
-
-
+class MyFindingsGetView(APIView):
+    def post(self, request):
+        token = request.data['jwt']
+        if not token:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            payload = jwt.decode(token, 'secret_key', algorithms=['HS256'], options={'verify_exp': False})
+            user = User.objects.filter(id=payload['id']).first()
+            print(user)
+            if user is None:
+                raise Exception("Unauthenticated")
+        except Exception as e:
+            print(e)
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        #Otherwise we are authenticated, continue normally
+        user = User.objects.filter(id=payload['id']).first()
+        return Response({'findings': user.myFindings})
         
 

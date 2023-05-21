@@ -7,6 +7,9 @@ class User(AbstractUser):
     last_name = models.CharField(max_length=255)
     email = models.CharField(max_length=255, unique=True)
     password = models.CharField(max_length=1024)
+    myReports = models.JSONField(default=list)
+    myFindings = models.JSONField(default=list)
+
     username = None
 
     #Login with email at all times
