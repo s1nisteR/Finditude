@@ -23,10 +23,17 @@ class MissingPerson(models.Model):
     age = models.IntegerField()
     gender = models.CharField(max_length=255)
     identifying_info = models.CharField(max_length=100000)
-    #TODO: Deal with images later on
+    contact = models.CharField(max_length=255)
 
 
 class MissingImage(models.Model):
     uuid = models.BigAutoField(primary_key=True)
     missingid = models.BigIntegerField()
     photo = models.ImageField(upload_to='missingImages/')
+
+class MissingPersonLocations(models.Model):
+    uuid = models.BigAutoField(primary_key=True)
+    missingid = models.BigIntegerField()
+    lattitude = models.CharField(max_length=2056)
+    longitude = models.CharField(max_length=2056)
+

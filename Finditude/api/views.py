@@ -10,7 +10,7 @@ import datetime
 import json
 from django.http import JsonResponse
 from rest_framework.parsers import MultiPartParser, FormParser
-from .models import MissingImage
+from .models import MissingImage, MissingPersonLocations
 
 
 
@@ -82,7 +82,8 @@ class MissingPersonRegView(APIView):
         age = request.data['age']
         gender = request.data['gender']
         identifying_info = request.data['identifying_info']
-        newMissingPerson = MissingPerson(full_name=full_name, age=age, gender=gender, identifying_info=identifying_info)
+        contact = request.data['contact']
+        newMissingPerson = MissingPerson(full_name=full_name, age=age, gender=gender, identifying_info=identifying_info, contact=contact)
         #Actually write to the database
         newMissingPerson.save()
         #Save the ID of this missing person to the myReports of the reporter
@@ -114,7 +115,8 @@ class MissingPersonGetView(APIView):
             'full_name': missingPerson.full_name,
             'age': missingPerson.age,
             'gender': missingPerson.gender,
-            'identifying_info': missingPerson.identifying_info
+            'identifying_info': missingPerson.identifying_info,
+            'contact': missingPerson.contact
         }
         return response
 
@@ -232,7 +234,7 @@ class StartFindingView(APIView):
         #Otherwise we are authenticated, continue normally
         missingid = request.data['id']
         user = User.objects.filter(id=payload['id']).first()
-        user.myFindings.append(missingid)
+        user.myFindings.append(int(missingid))
         user.save()
         return Response(status=status.HTTP_200_OK)
 
@@ -253,4 +255,51 @@ class MyFindingsGetView(APIView):
         #Otherwise we are authenticated, continue normally
         return Response({'findings': User.objects.filter(id=payload['id']).first().myFindings})
         
+class ReportLocationView(APIView):
+    def post(self, request):
+        token = request.data['jwt']
+        if not token:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            payload = jwt.decode(token, 'secret_key', algorithms=['HS256'], options={'verify_exp': False})
+            user = User.objects.filter(id=payload['id']).first()
+            print(user)
+            if user is None:
+                raise Exception("Unauthenticated")
+        except Exception as e:
+            print(e)
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        #Otherwise we are authenticated, continue normally
+        id = request.data['id']
+        lattitude = request.data['lattitude']
+        longitude = request.data['longitude']
+        if id and lattitude and longitude:
+            location = MissingPersonLocations.objects.create(missingid=id, lattitude=lattitude, longitude=longitude)
+            location.save()
+            return Response(status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_400_BAD_REQUEST) #otherwise return that it was a bad request
 
+class GetLocationView(APIView):
+    def post(self, request):
+        token = request.data['jwt']
+        if not token:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            payload = jwt.decode(token, 'secret_key', algorithms=['HS256'], options={'verify_exp': False})
+            user = User.objects.filter(id=payload['id']).first()
+            print(user)
+            if user is None:
+                raise Exception("Unauthenticated")
+        except Exception as e:
+            print(e)
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+        #Otherwise we are authenticated, continue normally
+        id = request.data['id']
+        if id:
+            locations = MissingPersonLocations.objects.filter(missingid=id) 
+            # Extract latitudes and longitudes from the locations
+            latitudes = [location.lattitude for location in locations]
+            longitudes = [location.longitude for location in locations]
+            return Response({'lattitudes': latitudes, 'longitudes': longitudes})
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+    

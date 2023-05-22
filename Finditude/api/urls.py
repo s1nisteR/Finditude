@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import RegisterView, LoginView, LogoutView, MissingPersonRegView, MissingPersonGetView, MissingPersonRandom
-from .views import MissingPersonImageUploadView, MissingPersonImageGetView, MyReportsGetView, StartFindingView, MyFindingsGetView
+from .views import MissingPersonImageUploadView, MissingPersonImageGetView, MyReportsGetView, StartFindingView, MyFindingsGetView, ReportLocationView, GetLocationView
 
 urlpatterns = [
     path('register',RegisterView.as_view()), 
@@ -13,5 +13,7 @@ urlpatterns = [
     path('missingimageget', MissingPersonImageGetView.as_view()),
     path('getreports', MyReportsGetView.as_view()),
     path('startfinding', StartFindingView.as_view()),
-    path('getfindings', MyFindingsGetView.as_view())
+    path('getfindings', MyFindingsGetView.as_view()),
+    path('reportlocation', ReportLocationView.as_view()),
+    path('getlocation', GetLocationView.as_view()),
 ]
